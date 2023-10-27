@@ -1,0 +1,289 @@
+<Commented code to show functionality>
+Server Code:
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <iostream>
+#include <cstring>
+#include <stack>
+#include <stdlib.h>
+#include <string>
+
+#define MAX_MSG 100
+#define LINE_ARRAY_SIZE (MAX_MSG+1)
+
+using namespace std;
+
+int main()
+{
+    int listenSocket, connectSocket;
+    unsigned short int listenPort;
+    socklen_t clientAddressLength;
+    struct sockaddr_in clientAddress, serverAddress;
+    char line[LINE_ARRAY_SIZE];
+    std::string Peakdistrict1 = "Your matching walk is 'Hope and Win Hill' (from book:More Peak District pg 18) would you like to buy the book?"; //initialising variables to store  matching walks
+    std::string Peakdistrict2 = "Your matching walk is 'Hathasage' (from book:More Peaks pg 67) would you like to buy the book?";
+    std::string Peakdistrict3 = "Your matching walk is 'Peaker' (from book:More Peaks pg 34) would you like to buy the book?";
+    std::string Peakdistrict4 = "Your matching walk is 'Peaking View' (from book:Peak District pg 41) would you like to buy the book?";
+    std::string Cheshire1 = "Your matching walks is 'Dane Valley' (from book:Cheshire pg 20) would you like to buy the book?";
+    std::string Cheshire2 = "Your matching walk is 'Malpas' (from book:Cheshire pg 80) would you like to buy the book?";
+    std::string Cheshire3 = "Your matching walk is 'Farndon' (from book:Cheshire pg 48) would you like to buy the book?";
+    std::string Cheshire4 = "Your matching walk is 'veroda' (from book:Cheshire pg 16) would you like to buy the book?";
+    std::string York1 = "Your matching walk is 'shilly' (from book:Vale Of York pg 57) would you like to buy the book?";
+    std::string York2 = "Your matching walk is 'Fridaythorpe' (from book:Vale Of York pg 42) would you like to buy the book?";
+    std::string York3 = "Your matching walk is 'Saturnwalk' (from book:Vale Of York pg 37) would you like to buy the book?";
+    std::string York4 = "Your matching walk is 'Cowlam' (from book:Vale Of York pg 64) would you like to buy the book?";
+    std::string message; //initialise message that is returned to the client
+    float pricebook = 16; //initialise price of book to use in calculation later
+    int stock = 4; //initialise stock to check later if there is enough stock for client
+    int num; //initialising num to use later in calculation
+    std::string copies = "How many copies would you like? "; // initialise variable copies to ask client how many copies theyd like.
+    std::string leave = "you can make a new search or enter . to leave "; //initialise variable to use if client doesnt want to buy a book.
+    
+    cout << "Enter port number to listen on (between 1500 and 65000): ";
+    cin >> listenPort;
+  // Create socket for listening for client connection
+  // requests.
+    listenSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (listenSocket < 0) {
+        cerr << "cannot create listen socket";
+        exit(1);
+    }
+    
+   // Bind listen socket to listen port. First set various
+   // fields in the serverAddress structure, then call
+   // bind().
+   // htonl() and htons() convert long integers and short
+   // integers (respectively) from host byte order (on x86
+   // this is Least Significant Byte first) to network byte
+   // order (Most Significant Byte first).   
+    
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+    serverAddress.sin_port = htons(listenPort);
+
+    if (bind(listenSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0) {
+        cerr << "cannot bind socket"; //print error
+        exit(1); // Exit with return value 1
+    }
+   // Wait for connections from clients. This is a
+   // non-blocking call; i.e., it registers this program with
+   // the system as expecting connections on this socket, and
+   // then this thread of execution continues on.    
+
+    listen(listenSocket, 5);
+
+    while (1) {
+        cout << "Waiting for TCP connection on port " << listenPort << " ...\n";
+     // Accept a connection with a client that is requesting
+     // one. The accept() call is a blocking call; i.e., this
+     // thread of execution stops until a connection comes
+     // in. connectSocket is a new socket that the system
+     // provides, separate from listenSocket. We *could*
+     // accept more connections on listenSocket, before
+     // connectSocket is closed, but this program doesn't do
+     // that.       
+        
+        clientAddressLength = sizeof(clientAddress);
+        connectSocket = accept(listenSocket, (struct sockaddr *) &clientAddress, &clientAddressLength);
+        if (connectSocket < 0) {
+            cerr << "cannot accept connection "; // Print error
+            exit(1); // Exit with return value 1
+        }
+     // Show the IP address of the client.
+     // inet_ntoa() converts an IP address from binary form to the
+     // standard "numbers and dots" notation.
+        
+        cout << " connected to " << inet_ntoa(clientAddress.sin_addr);
+
+     // Show the client's port number.
+     // ntohs() converts a short int from network byte order (which is
+     // Most Significant Byte first) to host byte order (which on x86,
+     // for example, is Least Significant Byte first).
+        cout << ":" << ntohs(clientAddress.sin_port) << "\n";
+
+     // Read lines from socket, using recv(), storing them in the line
+     // array. If no messages are currently available, recv() blocks
+     // until one arrives.
+     // First set line to all zeroes, so we'll know where the end of
+     // the string is.
+        
+        memset(line, 0x0, LINE_ARRAY_SIZE);
+        while (recv(connectSocket, line, MAX_MSG, 0) > 0) {
+            if (strstr(line, "Peakdistrict") && strstr(line, "easy") && strstr(line, "short")) {  //check if line inputed by client include all 3. all 3 must be present to return specified walk
+                message = Peakdistrict1;
+            } else if (strstr(line, "Peakdistrict") && strstr(line, "easy") && strstr(line, "long")) {
+                message = Peakdistrict2;
+            } else if (strstr(line, "Peakdistrict") && strstr(line, "hard") && strstr(line, "short")) {
+                message = Peakdistrict3;
+            } else if (strstr(line, "Peakdistrict") && strstr(line, "hard") && strstr(line, "long")) {
+                message = Peakdistrict4;
+            } else if (strstr(line, "Cheshire") && strstr(line, "easy") && strstr(line, "short")) {
+                message = Cheshire1;
+            } else if (strstr(line, "Cheshire") && strstr(line, "easy") && strstr(line, "long")) {
+                message = Cheshire2;
+            } else if (strstr(line, "Cheshire") && strstr(line, "hard") && strstr(line, "short")) {
+                message = Cheshire3;
+            } else if (strstr(line, "Cheshire") && strstr(line, "hard") && strstr(line, "long")) {
+                message = Cheshire4;
+            } else if (strstr(line, "York") && strstr(line, "easy") && strstr(line, "short")) {
+                message = York1;
+            } else if (strstr(line, "York") && strstr(line, "easy") && strstr(line, "long")) {
+                message = York2;
+            } else if (strstr(line, "York") && strstr(line, "hard") && strstr(line, "short")) {
+                message = York3;  
+            } else if (strstr(line, "York") && strstr(line, "hard") && strstr(line, "long")) {                        
+                message = York4;  
+            } else if (strstr(line, "no")) { //client will be asked if they want to buy the book. if line includes no, message will be equal to variable leave.
+                message = leave; 
+            } else if (strstr(line, "yes")) { //client will be asked if they want to buy the book. if the line includes yes, message will be equal to variable copies.
+                message = copies;                      
+            } else if (std::isdigit(line[0])){ //check if line includes any numbers. this is used for when client is asked how many copies theyd like to buy.
+                int num = std::stoi(line);  //the string is coverted into an integer so it can be used for calculations. and stored in variable num
+                  if((num > stock) && (num < 6)){ //check if num is greater than stock and is less than 6 (6 is the minimum number of books to order for the price to be > 75)
+                     int result = num - stock; //if so perform calculation num - stock to get how many extra books to order and store in result
+                     int result2 = num * pricebook; //also perform this calculation to work out the total price and store in result2
+                     message = "Only 4 books in stock. Ive back ordered " + std::to_string(result) + " extra books your total is " + std::to_string(result2) + " pounds. input new search";}//form message. convert the integers back to strings and put everything together.
+                  else if (num <= stock){ //check if num is less than or equal to stock 
+                     int result = num * pricebook;//if so perform calculation to work out total price and store in result         
+                     message = "we have enough stock. Total is: " + std::to_string(result) + " pounds. input new search";     } //form message     
+                  else if((num > stock) && (num >= 6)){//check if num is greater than stock and equal to or greater than 6
+                      int result = num - stock; //if so check how mant extra books needed and store in result
+                      int result2 = (num * pricebook) * 0.9; //calculate total price with 10% off as client spent more than 75 and store in result2
+                      message = "Only 4 books in stock. Ive back ordered " + std::to_string(result) + " extra books your total is " + std::to_string(result2) + " pounds. input new search";}//form message
+
+                    
+            } else {//if user client enters anything the server doesnt recognise output following message
+                message = "Invalid message"; 
+            }
+                    
+            strcpy(line, message.c_str()); //copy content of message into line
+                    
+            if (send(connectSocket, message.c_str(), message.length() + 1, 0) < 0) {
+                cerr << "Error: cannot send modified data"; //send function sends data back to client.
+            }
+                    
+            memset(line, 0x0, LINE_ARRAY_SIZE); //cleat the content of line to search new input 
+        }
+
+    }
+}
+Client Code:
+#include <netdb.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <iostream>
+#include <cstring>
+#include <stdlib.h>
+
+#define MAX_LINE 100
+#define LINE_ARRAY_SIZE (MAX_LINE+1)
+
+using namespace std;
+
+int main()
+{
+  int socketDescriptor;
+  unsigned short int serverPort;
+  struct sockaddr_in serverAddress;
+  struct hostent *hostInfo;
+  char buf[LINE_ARRAY_SIZE], c;
+
+  cout << "Enter server host name or IP address: ";
+  cin.get(buf, MAX_LINE, '\n');
+
+  // gethostbyname() takes a host name or ip address in "numbers and
+  // dots" notation, and returns a pointer to a hostent structure,
+  // which we'll need later.  It's not important for us what this
+  // structure is actually composed of.
+  hostInfo = gethostbyname(buf);
+  if (hostInfo == NULL) {
+    cout << "problem interpreting host: " << buf << "\n";
+    exit(1);
+  }
+
+  cout << "Enter server port number: ";
+  cin >> serverPort;
+  cin.get(c); // dispose of the newline
+
+  // Create a socket.  "AF_INET" means it will use the IPv4 protocol.
+  // "SOCK_STREAM" means it will be a reliable connection (i.e., TCP;
+  // for UDP use SOCK_DGRAM), and I'm not sure what the 0 for the last
+  // parameter means, but it seems to work.
+  socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
+  if (socketDescriptor < 0) {
+    cerr << "cannot create socket\n";
+    exit(1);
+  }
+
+  // Connect to server.  First we have to set some fields in the
+  // serverAddress structure.  The system will assign me an arbitrary
+  // local port that is not in use.
+  serverAddress.sin_family = hostInfo->h_addrtype;
+  memcpy((char *) &serverAddress.sin_addr.s_addr,
+         hostInfo->h_addr_list[0], hostInfo->h_length);
+  serverAddress.sin_port = htons(serverPort);
+				
+  if (connect(socketDescriptor,
+              (struct sockaddr *) &serverAddress,
+              sizeof(serverAddress)) < 0) {
+    cerr << "cannot connect\n";
+    exit(1);
+  }
+
+  cout << "\nThis server will recommend a walk for you. You can then buy the book\n";
+  cout << "If you spend more than 75 pound a 10% discount will be applied to your total\n";
+  cout << "When you are done, enter a line with\n";
+  cout << "just a dot, and nothing else.\n";
+
+
+  // Prompt the user for input, then read in the input, up to MAX_LINE
+  // charactars, and then dispose of the rest of the line, including
+  // the newline character.
+  cout << "where would you like to walk. Please enter one from each bracket." << endl
+       << "Area (Peakdistrict, Cheshire, York) " << endl 
+       << "Difficulty (easy or hard) " << endl 
+       << "Distance (short or long): ";
+
+  cin.get(buf, MAX_LINE, '\n');
+  while (cin.get(c) && c != '\n') 
+    ; //Loop does nothing except consume the spare bytes
+
+
+  // Stop when the user inputs a line with just a dot.
+  while (strcmp(buf, ".")) { //strcmp returns 0 when the two strings
+			     //are the same, so this continues when
+			     //they are different
+    // Send the line to the server.
+    if (send(socketDescriptor, buf, strlen(buf) + 1, 0) < 0) {
+      cerr << "cannot send data ";
+      close(socketDescriptor); //Note this is just like using files...
+      exit(1);
+    }
+
+    // Zero out the buffer.
+    memset(buf, 0x0, LINE_ARRAY_SIZE);
+
+    // Read the modified line back from the server.
+    if (recv(socketDescriptor, buf, MAX_LINE, 0) < 0) {
+      cerr << "didn't get response from server?";
+      close(socketDescriptor);
+      exit(1);
+    }
+
+    cout << buf << "\n";
+
+    // Prompt the user for input, then read in the input, up to MAX_LINE
+    // charactars, and then dispose of the rest of the line, including
+    // the newline character.  As above.
+    cout << "Input: ";
+    cin.get(buf, MAX_LINE, '\n');
+    while (cin.get(c) && c != '\n')
+      ; //Chomp chomp chomp
+  }
+
+  close(socketDescriptor);
+  return 0;
+}
+
